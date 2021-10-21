@@ -16,7 +16,7 @@ numSensors = 2
 # Use GPI0 ## to Define PINs
 GPIO.setmode(GPIO.BCM)
 
-# RPi PIN Setup
+# RPi PIN Setup (Straight Down)
 PIN_TRIG_1 = 23
 GPIO.setup(PIN_TRIG_1, GPIO.OUT)
 GPIO.output(PIN_TRIG_1, False)
@@ -28,6 +28,19 @@ GPIO.setup(PIN_TRIG_2, GPIO.OUT)
 GPIO.output(PIN_TRIG_2, False)
 PIN_ECHO_2 = 27
 GPIO.setup(PIN_ECHO_2, GPIO.IN)
+
+# RPi PIN Setup (Angled)
+PIN_TRIG_3 = 5
+GPIO.setup(PIN_TRIG_3, GPIO.OUT)
+GPIO.output(PIN_TRIG_3, False)
+PIN_ECHO_3 = 6
+GPIO.setup(PIN_ECHO_3, GPIO.IN)
+
+PIN_TRIG_4 = 22
+GPIO.setup(PIN_TRIG_4, GPIO.OUT)
+GPIO.output(PIN_TRIG_4, False)
+PIN_ECHO_4 = 6
+GPIO.setup(PIN_ECHO_4, GPIO.IN)
 
 # Conduct a single measurement of one ultrasonic sensor specified by its trigger and echo PINs
 def ping(trig, echo):
@@ -66,8 +79,10 @@ def arrayScan(trigs, echos):
 
 
 def conductTest(maxTime):
-    trigs = [PIN_TRIG_1, PIN_TRIG_2]
-    echos = [PIN_ECHO_1, PIN_ECHO_2]
+    trigs_str = [PIN_TRIG_1, PIN_TRIG_2]
+    echos_str = [PIN_ECHO_1, PIN_ECHO_2]
+    trigs_ang = [PIN_TRIG_3, PIN_TRIG_4]
+    echos_ang = [PIN_ECHO_3, PIN_ECHO_4]
 
     # Record initial time for the test
     testStart = time.time()
@@ -90,9 +105,6 @@ def conductTest(maxTime):
 
     # Write all results to an output JSON file
     now = date.now()
-    filename = "Results/" + now.strftime("%b-%d-%Y_%H:%M:%S") + ".json"
+    filename = "Results/" + now.strftime("%b-%d-%Y_%H:%M:%S") + "_angled.json"
     with open(filename, 'w') as file:
         json.dump(results, file)
-
-maxTime = 60 # s
-conductTest(maxTime)
