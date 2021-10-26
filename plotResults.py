@@ -13,7 +13,7 @@ mpl.rc('text.latex', preamble=r'\usepackage{sansmathfonts}\renewcommand{\familyd
 # Define the number of ultrasonic sensors in the array
 numSensors = 2
 
-filename = "Results/Oct-21-2021_15:00:00.json"
+filename = "Results/Oct-21-2021_18:08:26.json"
 with open(filename, 'r') as file:
     results = json.load(file)
 file.close()

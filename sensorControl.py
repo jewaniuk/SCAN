@@ -2,7 +2,7 @@
 import RPi.GPIO as GPIO
 import time
 import json
-from datetime import date
+from datetime import datetime as date
 
 # Define the speed of sound in air at ~room temperature
 vSound = 34400 # cm/s
@@ -17,32 +17,41 @@ numSensors = 2
 GPIO.setmode(GPIO.BCM)
 
 # RPi PIN Setup
-PIN_TRIG_1 = 23
+PIN_TRIG_1 = 21
 GPIO.setup(PIN_TRIG_1, GPIO.OUT)
 GPIO.output(PIN_TRIG_1, False)
-PIN_ECHO_1 = 24
+PIN_ECHO_1 = 20
 GPIO.setup(PIN_ECHO_1, GPIO.IN)
 
-PIN_TRIG_2 = 17
+PIN_TRIG_2 = 18
 GPIO.setup(PIN_TRIG_2, GPIO.OUT)
 GPIO.output(PIN_TRIG_2, False)
-PIN_ECHO_2 = 27
+PIN_ECHO_2 = 24
 GPIO.setup(PIN_ECHO_2, GPIO.IN)
 
 # Conduct a single measurement of one ultrasonic sensor specified by its trigger and echo PINs
 def ping(trig, echo):
     # Set desired trigger HIGH for 0.01 ms (this is the required time by the HC-SR04 datasheet)
-    GPIO.output(trig, True)
+    GPIO.output(trig, GPIO.HIGH)
     time.sleep(0.00001) 
-    GPIO.output(trig, False)
+    GPIO.output(trig, GPIO.LOW)
+    trigDone = time.time()
 
     # Wait until the desired echo is HIGH to start the timer
-    while GPIO.input(echo) == 0:
-        pulseStart = time.time()
+    #while not GPIO.input(echo):
+        #pulseStart = time.time()
+        #print("ECHO IS LOW")
 
     # Wait until the desired echo is LOW to end the timer
-    while GPIO.input(echo) == 1:
-        pulseEnd = time.time()
+    pulseStart = trigDone
+    checkON = False
+    while (time.time() - trigDone) < 0.031:
+        if (not GPIO.input(echo)) and (not checkON):
+            pulseStart = time.time()
+        else:
+            pulseEnd = time.time()
+            checkON = True
+        print("ECHO IS HIGH")
     
     # Compute the pulse duration followed by the distance
     pulseDuration = pulseEnd - pulseStart
@@ -57,10 +66,15 @@ def arrayScan(trigs, echos):
     distances = []
     for i in range(numSensors):
         # Store distance measurements and their respective times from each ping in lists
-        pulseTime, pulseDistance = ping(trigs[i], echos[i])
+        try:
+            pulseTime, pulseDistance = ping(trigs[i], echos[i])
+        except:
+            pulseTime, pulseDistance = (time.time(), 4)
+            print("SHAQ WALKED IN")
         times.append(pulseTime)
         distances.append(pulseDistance)
         time.sleep(delay)
+    time.sleep(delay)
 
     return times, distances
 
@@ -77,6 +91,7 @@ def conductTest(maxTime):
     distances = [[] for i in range(numSensors)]
     while (time.time() - testStart) < maxTime:
         scanTimes, scanDistances = arrayScan(trigs, echos)
+        print("Completed Array Scan", time.time() - testStart)
         # Store the data for each sensor in seperate lists within lists of lists
         for i in range(numSensors):
             times[i].append(scanTimes[i] - testStart)
@@ -86,13 +101,14 @@ def conductTest(maxTime):
     results = {}
     for i in range(numSensors):
         # Store lists of tuples by sensor number in a dictionary for the output JSON file
-        results[i + 1].append(zip(times[i], distances[i]))
+        results[i + 1] = []
+        results[i + 1].append(list(zip(times[i], distances[i])))
 
     # Write all results to an output JSON file
     now = date.now()
-    filename = "Results/" + now.strftime("%b-%d-%Y_%H:%M:%S") + ".json"
+    filename = "/home/pi/Documents/SCAN/Results/" + now.strftime("%b-%d-%Y_%H:%M:%S") + ".json"
     with open(filename, 'w') as file:
         json.dump(results, file)
 
-maxTime = 60 # s
+maxTime = 10 # s
 conductTest(maxTime)
